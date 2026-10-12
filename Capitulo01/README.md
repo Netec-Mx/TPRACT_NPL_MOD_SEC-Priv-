@@ -2,146 +2,113 @@
 
 ## Metadatos
 
-| Campo | Valor |
-|-------|-------|
-| **Duración** | 105 minutos |
-| **Complejidad** | Alta |
-| **Nivel Bloom** | Crear |
 
-## Descripción General
+| Campo           | Valor                                           |
+| --------------- | ----------------------------------------------- |
+| **Audiencia**   | Usuario de negocio                              |
+| **Duración**    | 105 minutos                                     |
+| **Complejidad** | Guiada                                          |
+| **Software**    | Ya instalado. En este taller no se instala nada |
 
-En esta práctica integradora construirás desde cero un sistema completo de detección de solicitudes bancarias duplicadas. Partirás de un dataset sintético de solicitudes en español, realizarás análisis exploratorio, preprocesarás el texto con técnicas de NLP, entrenarás embeddings Word2Vec, generarás pares de entrenamiento, diseñarás e implementarás una red neuronal siamesa con capas LSTM compartidas, y finalmente evaluarás el sistema con métricas de clasificación binaria. Al finalizar dispondrás de un modelo funcional capaz de identificar si dos solicitudes bancarias son duplicadas.
 
-## Objetivos de Aprendizaje
+## Qué vas a hacer
 
-- [ ] Implementar un pipeline completo de preprocesamiento NLP para textos bancarios en español (tokenización, normalización, eliminación de stopwords, padding)
-- [ ] Entrenar embeddings Word2Vec sobre el corpus bancario y construir una matriz de pesos compatible con Keras
-- [ ] Diseñar e implementar una red neuronal siamesa con LSTM compartido para clasificar pares de solicitudes
-- [ ] Entrenar el modelo siamés monitoreando métricas de validación con callbacks apropiados
-- [ ] Evaluar el sistema con accuracy, precisión, recall, F1-score y ROC-AUC, interpretando resultados en contexto bancario
+Vas a construir un sistema que compara dos solicitudes bancarias y dice si piden lo mismo. Tú preparas los ejemplos, limpias el texto, separas los datos, entrenas el modelo y lo pruebas con frases nuevas.
+
+El software ya está en la máquina. Tú no instalas programas. Copias cada bloque de Python en el notebook, en orden, y lo ejecutas con `Shift+Enter`.
+
+Una pareja es duplicada cuando las dos frases salen del mismo grupo: la misma solicitud, escrita de otra forma. Dos temas parecidos de grupos distintos cuentan como no duplicados.
 
 ## Prerrequisitos
 
-### Conocimientos Requeridos
+Esto ya lo dejó listo el facilitador. Los pasos de preparación están en [Prerequisitos.md](Prerequisitos.md). Si falta alguno, avísale. No lo instales durante el taller.
 
-| Tema | Nivel |
-|------|-------|
-| Python 3.10+ y JupyterLab | Intermedio |
-| NumPy y pandas | Intermedio |
-| Redes neuronales recurrentes (LSTM) | Conceptual sólido |
-| Redes siamesas y funciones de pérdida | Conceptual |
-| Word embeddings (Word2Vec) | Conceptual |
-| Keras/TensorFlow (ciclo train/eval) | Básico-Intermedio |
 
-### Acceso Requerido
+| Requisito               | Qué debes encontrar                                                                                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Equipo                  | Windows Server con escritorio                                                                                                                                  |
+| Editor                  | Visual Studio Code, con las extensiones Python y Jupyter                                                                                                       |
+| Carpeta                 | `C:\Users\<tu_usuario>\nlp_banking_lab`                                                                                                                        |
+| Kernel del notebook     | **Python (nlp_banking_lab)**                                                                                                                                   |
+| Python                  | 3.10, 64 bits, dentro de la carpeta `nlp_env`                                                                                                                  |
+| Librerías ya instaladas | TensorFlow 2.15.0, Gast 0.5.4, NumPy 1.26.4, pandas 2.2.1, scikit-learn 1.4.1.post1, NLTK 3.8.1, Gensim 4.3.2, SciPy 1.12.0, Matplotlib 3.8.3, Unidecode 1.3.8 |
+| Internet                | Solo la primera vez, para bajar la lista de palabras vacías del español                                                                                        |
 
-- Terminal con permisos de escritura en el directorio de trabajo
-- Python 3.10.12 instalado
-- Conexión a Internet (para descarga de recursos NLTK)
-- Mínimo 8 GB RAM disponible
 
-## Entorno del Laboratorio
+Conocimientos que ayudan: leer una tabla y cambiar un texto entre comillas. No hace falta haber entrenado una red neuronal antes.
 
-### Hardware Mínimo
+## Abrir el notebook
 
-| Componente | Especificación |
-|------------|---------------|
-| CPU | Intel Core i5 8ª gen / AMD Ryzen 5 3000+ (4 núcleos) |
-| RAM | 8 GB DDR4 (recomendado 16 GB) |
-| Almacenamiento | 5 GB libres |
-| GPU (opcional) | NVIDIA CUDA 11.8+, 4 GB VRAM |
+1. Abre Visual Studio Code.
+2. **Archivo > Abrir carpeta** y elige `C:\Users\<tu_usuario>\nlp_banking_lab`.
+3. Confía en la carpeta si Visual Studio Code lo pregunta.
+4. Entra a `notebooks`. Crea un notebook llamado `siamese_banking_duplicates.ipynb` (**Archivo > Nuevo archivo**, elige notebook).
+5. Arriba a la derecha elige el kernel **Python (nlp_banking_lab)**.
+6. Copia cada bloque gris de esta guía en una celda nueva, en el orden en que aparece, y ejecútalo.
 
-### Software
+Si el kernel no aparece, avisa al facilitador. No cambies de intérprete.
 
-| Herramienta | Versión |
-|-------------|---------|
-| Python | 3.10.12 |
-| TensorFlow / Keras | 2.15.0 |
-| NumPy | 1.26.4 |
-| pandas | 2.2.1 |
-| scikit-learn | 1.4.1.post1 |
-| NLTK | 3.8.1 |
-| Gensim | 4.3.2 |
-| Matplotlib / seaborn | 3.8.3 / 0.13.2 |
-| JupyterLab | 4.1.5 |
-
-### Configuración Inicial del Entorno
-
-Ejecuta los siguientes comandos en la terminal para preparar el entorno completo:
-
-```bash
-# Crear directorio raíz del proyecto
-mkdir -p ~/nlp_banking_lab/{data/raw,data/processed,models,notebooks,embeddings}
-cd ~/nlp_banking_lab
-
-# Crear entorno virtual
-python3 -m venv nlp_env
-source nlp_env/bin/activate
-
-# Crear requirements.txt
-cat > requirements.txt << 'EOF'
-tensorflow==2.15.0
-keras==2.15.0
-numpy==1.26.4
-pandas==2.2.1
-scikit-learn==1.4.1.post1
-nltk==3.8.1
-gensim==4.3.2
-matplotlib==3.8.3
-seaborn==0.13.2
-tqdm==4.66.2
-Unidecode==1.3.8
-jupyterlab==4.1.5
-EOF
-
-# Instalar dependencias
-pip install --upgrade pip==24.0
-pip install -r requirements.txt
-
-# Lanzar JupyterLab
-jupyter lab --port=8888
-```
-
-Abre el navegador en `http://localhost:8888/lab` y crea un nuevo notebook en `notebooks/` con el nombre `siamese_banking_duplicates.ipynb`.
+Cuando una celda termine, sigue con la siguiente. Si una celda falla, no sigas: vuelve a ejecutar desde la celda de arranque.
 
 ---
 
-## Paso 1: Generación del Dataset Sintético de Solicitudes Bancarias
+## Celda de arranque
 
-### Objetivo
-
-Crear un dataset realista de solicitudes bancarias en español con grupos de duplicados identificados, que servirá como base para todo el laboratorio.
-
-### Instrucciones
-
-1. En la primera celda del notebook, importa las librerías necesarias y configura las semillas de reproducibilidad:
+Enciende las herramientas y fija la carpeta de trabajo. No cambies esta celda.
 
 ```python
+import json
+import os
+import random
+import re
+
+import matplotlib.pyplot as plt
+import nltk
 import numpy as np
 import pandas as pd
-import random
-import os
+import tensorflow as tf
+from unidecode import unidecode
 
-# Reproducibilidad
-SEED = 42
-np.random.seed(SEED)
-random.seed(SEED)
+tf.get_logger().setLevel("ERROR")
 
-# Directorio base
-BASE_DIR = os.path.expanduser("~/nlp_banking_lab")
-RAW_DIR = os.path.join(BASE_DIR, "data", "raw")
-PROCESSED_DIR = os.path.join(BASE_DIR, "data", "processed")
-MODELS_DIR = os.path.join(BASE_DIR, "models")
-EMBEDDINGS_DIR = os.path.join(BASE_DIR, "embeddings")
+SEMILLA = 42
+os.environ["PYTHONHASHSEED"] = str(SEMILLA)
+random.seed(SEMILLA)
+np.random.seed(SEMILLA)
+tf.random.set_seed(SEMILLA)
 
-print(f"Directorio base: {BASE_DIR}")
+CARPETA = os.path.join(os.path.expanduser("~"), "nlp_banking_lab")
+CARPETA_DATOS = os.path.join(CARPETA, "data", "raw")
+CARPETA_PROCESADOS = os.path.join(CARPETA, "data", "processed")
+CARPETA_MODELOS = os.path.join(CARPETA, "models")
+CARPETA_VECTORES = os.path.join(CARPETA, "embeddings")
+CARPETA_NOTEBOOKS = os.path.join(CARPETA, "notebooks")
+CARPETA_NLTK = os.path.join(CARPETA, "nltk_data")
+
+for ruta in (CARPETA_DATOS, CARPETA_PROCESADOS, CARPETA_MODELOS, CARPETA_VECTORES, CARPETA_NOTEBOOKS, CARPETA_NLTK):
+    os.makedirs(ruta, exist_ok=True)
+
+print("Python listo")
+print("TensorFlow", tf.__version__)
+print("Carpeta:", CARPETA)
+if not tf.__version__.startswith("2.15"):
+    print("Avisa al facilitador: este kernel no es el del laboratorio.")
 ```
 
-2. Genera el dataset sintético con solicitudes bancarias agrupadas por duplicados:
+Al importar TensorFlow puede salir un aviso de deprecación. Puedes seguir.
+
+---
+
+## Paso 1. Crear las solicitudes de ejemplo
+
+### Qué haces
+
+Armas ejemplos de solicitudes. Cada grupo es una misma petición escrita varias veces: el texto original y dos, tres o cuatro variantes.
+
+### Código
 
 ```python
-# Plantillas de solicitudes bancarias por categoría
-templates = {
+plantillas = {
     "credito": [
         "Solicito información sobre créditos de libre inversión disponibles",
         "Necesito un préstamo personal para libre inversión",
@@ -204,1448 +171,615 @@ templates = {
     ],
 }
 
-# Variaciones para generar duplicados semánticos
-variaciones = [
-    lambda t: t.replace("Solicito", "Pido").replace("solicito", "pido"),
-    lambda t: t.replace("Necesito", "Requiero").replace("necesito", "requiero"),
-    lambda t: t.replace("Quiero", "Deseo").replace("quiero", "deseo"),
-    lambda t: t + " por favor",
-    lambda t: "Buenos días, " + t[0].lower() + t[1:],
-    lambda t: t + ". Agradezco su pronta respuesta",
-    lambda t: "Hola, " + t[0].lower() + t[1:],
-    lambda t: t.replace("mi", "mi ").replace("  ", " "),  # mantener igual
-    lambda t: "Urgente: " + t[0].lower() + t[1:],
-    lambda t: t + ". Quedo atento",
-]
+CAMBIOS = (
+    ("Solicito", "Pido"),
+    ("Necesito", "Requiero"),
+    ("Quiero", "Deseo"),
+    ("Deseo", "Quisiera"),
+    ("Presento", "Interpongo"),
+    ("información", "info"),
+)
 
-# Generar dataset
-records = []
-id_counter = 0
-grupo_counter = 0
 
-for categoria, textos_base in templates.items():
-    for texto_base in textos_base:
-        grupo_counter += 1
-        # Texto original
-        id_counter += 1
-        records.append({
-            "id": id_counter,
-            "texto_solicitud": texto_base,
-            "categoria": categoria,
-            "grupo_duplicado": grupo_counter
-        })
-        # Generar 2-4 variaciones (duplicados semánticos)
-        n_variaciones = random.randint(2, 4)
-        selected_vars = random.sample(variaciones, n_variaciones)
-        for var_func in selected_vars:
-            id_counter += 1
-            texto_variado = var_func(texto_base)
-            records.append({
-                "id": id_counter,
-                "texto_solicitud": texto_variado,
-                "categoria": categoria,
-                "grupo_duplicado": grupo_counter
-            })
+def variar(texto):
+    nuevo = texto
+    opciones = [(a, b) for a, b in CAMBIOS if a in nuevo]
+    if opciones:
+        a, b = random.choice(opciones)
+        nuevo = nuevo.replace(a, b, 1)
+    if random.choice((True, False)):
+        nuevo = "Hola, " + nuevo[0].lower() + nuevo[1:]
+    else:
+        nuevo = nuevo + " por favor"
+    if nuevo == texto:
+        nuevo = texto + " gracias"
+    return nuevo
 
-df = pd.DataFrame(records)
-df = df.sample(frac=1, random_state=SEED).reset_index(drop=True)
 
-# Guardar dataset
-output_path = os.path.join(RAW_DIR, "banking_requests.csv")
-df.to_csv(output_path, index=False)
-print(f"Dataset generado: {df.shape[0]} solicitudes, {df['grupo_duplicado'].nunique()} grupos")
-print(f"Guardado en: {output_path}")
-df.head(10)
+filas = []
+numero = 0
+grupo = 0
+for categoria, textos in plantillas.items():
+    for texto in textos:
+        grupo += 1
+        numero += 1
+        filas.append({"id": numero, "solicitud": texto, "categoria": categoria, "grupo": grupo})
+        ya_usados = {texto}
+        for _ in range(random.randint(2, 4)):
+            variante = variar(texto)
+            while variante in ya_usados:
+                variante += " gracias"
+            ya_usados.add(variante)
+            numero += 1
+            filas.append({"id": numero, "solicitud": variante, "categoria": categoria, "grupo": grupo})
+
+df = pd.DataFrame(filas).sample(frac=1, random_state=SEMILLA).reset_index(drop=True)
+df.to_csv(os.path.join(CARPETA_DATOS, "solicitudes.csv"), index=False, encoding="utf-8-sig")
+
+print(f"{len(df)} solicitudes en {df['grupo'].nunique()} grupos")
+df.head(8)
 ```
 
-### Salida Esperada
+### Qué debes ver
 
-```
-Dataset generado: ~185 solicitudes, 50 grupos
-Guardado en: /home/usuario/nlp_banking_lab/data/raw/banking_requests.csv
-```
-
-Se mostrará una tabla con las primeras 10 filas conteniendo columnas `id`, `texto_solicitud`, `categoria` y `grupo_duplicado`.
-
-### Verificación
-
-```python
-assert df.shape[0] > 150, "Dataset debe tener más de 150 registros"
-assert set(df.columns) == {"id", "texto_solicitud", "categoria", "grupo_duplicado"}
-assert df["categoria"].nunique() == 5
-print("✓ Dataset generado correctamente")
-```
+213 solicitudes y 50 grupos. La tabla muestra el texto, la categoría y el grupo. Dos filas con el mismo número de grupo son la misma petición.
 
 ---
 
-## Paso 2: Análisis Exploratorio de Datos (EDA)
+## Paso 2. Mirar los datos
 
-### Objetivo
+### Qué haces
 
-Comprender la distribución del dataset, la longitud de los textos y el balance de clases para informar decisiones de preprocesamiento y modelado.
+Revisas cuántas solicitudes hay de cada tipo y qué tan largas son. Sirve para saber con qué va a aprender el modelo.
 
-### Instrucciones
-
-1. Analiza la distribución de categorías y grupos de duplicados:
+### Código
 
 ```python
-import matplotlib.pyplot as plt
-import seaborn as sns
+%matplotlib inline
 
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+print(df["categoria"].value_counts())
+print()
+print("Solicitudes por grupo: mínimo", df.groupby("grupo").size().min(), ", máximo", df.groupby("grupo").size().max())
 
-# Distribución de categorías
-cat_counts = df["categoria"].value_counts()
-sns.barplot(x=cat_counts.index, y=cat_counts.values, ax=axes[0], palette="viridis")
-axes[0].set_title("Distribución de Categorías de Solicitudes")
-axes[0].set_xlabel("Categoría")
-axes[0].set_ylabel("Cantidad")
-axes[0].tick_params(axis='x', rotation=45)
+df["palabras"] = df["solicitud"].str.split().str.len()
+print("Largo promedio:", round(df["palabras"].mean(), 1), "palabras")
 
-# Distribución de solicitudes por grupo de duplicados
-grupo_sizes = df.groupby("grupo_duplicado").size()
-sns.histplot(grupo_sizes, bins=10, ax=axes[1], color="steelblue")
-axes[1].set_title("Tamaño de Grupos de Duplicados")
-axes[1].set_xlabel("Solicitudes por grupo")
-axes[1].set_ylabel("Frecuencia")
-
+df["categoria"].value_counts().plot(kind="bar", title="Solicitudes por categoría", color="steelblue")
+plt.ylabel("Cantidad")
 plt.tight_layout()
-plt.savefig(os.path.join(BASE_DIR, "notebooks", "eda_distribucion.png"), dpi=100)
+plt.savefig(os.path.join(CARPETA_NOTEBOOKS, "categorias.png"), dpi=100)
 plt.show()
-
-print(f"\nEstadísticas de grupos de duplicados:")
-print(f"  Tamaño mínimo: {grupo_sizes.min()}")
-print(f"  Tamaño máximo: {grupo_sizes.max()}")
-print(f"  Tamaño promedio: {grupo_sizes.mean():.1f}")
 ```
 
-2. Analiza la longitud de los textos:
+### Qué debes ver
 
-```python
-df["longitud_chars"] = df["texto_solicitud"].str.len()
-df["longitud_palabras"] = df["texto_solicitud"].str.split().str.len()
-
-fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-
-sns.histplot(df["longitud_palabras"], bins=20, ax=axes[0], color="coral")
-axes[0].set_title("Distribución de Longitud (palabras)")
-axes[0].set_xlabel("Número de palabras")
-axes[0].set_ylabel("Frecuencia")
-
-sns.boxplot(data=df, x="categoria", y="longitud_palabras", ax=axes[1], palette="Set2")
-axes[1].set_title("Longitud por Categoría")
-axes[1].set_xlabel("Categoría")
-axes[1].set_ylabel("Palabras")
-axes[1].tick_params(axis='x', rotation=45)
-
-plt.tight_layout()
-plt.savefig(os.path.join(BASE_DIR, "notebooks", "eda_longitudes.png"), dpi=100)
-plt.show()
-
-print(f"\nEstadísticas de longitud (palabras):")
-print(f"  Mínimo: {df['longitud_palabras'].min()}")
-print(f"  Máximo: {df['longitud_palabras'].max()}")
-print(f"  Promedio: {df['longitud_palabras'].mean():.1f}")
-print(f"  Percentil 95: {df['longitud_palabras'].quantile(0.95):.0f}")
-
-# Definir longitud máxima para padding
-MAX_SEQ_LEN = int(df['longitud_palabras'].quantile(0.95)) + 2
-print(f"\n  MAX_SEQ_LEN seleccionado: {MAX_SEQ_LEN}")
-```
-
-### Salida Esperada
-
-Se generarán dos figuras con gráficos de distribución. La longitud promedio estará entre 8-14 palabras por solicitud y el `MAX_SEQ_LEN` será aproximadamente 15-18.
-
-### Verificación
-
-```python
-assert "longitud_palabras" in df.columns
-assert MAX_SEQ_LEN > 10, "MAX_SEQ_LEN debe ser mayor a 10"
-print("✓ EDA completado correctamente")
-```
+Cinco categorías, grupos de 3 a 5 solicitudes y un promedio de 9.5 palabras. El gráfico queda en `notebooks\categorias.png`.
 
 ---
 
-## Paso 3: Preprocesamiento de Texto NLP
+## Paso 3. Limpiar el texto
 
-### Objetivo
+### Qué haces
 
-Implementar un pipeline de limpieza y normalización de texto adaptado al dominio bancario en español, incluyendo tokenización, eliminación de stopwords y normalización.
+Dejas el texto en minúsculas, sin acentos ni signos, y quitas palabras que casi no aportan (`de`, `la`, `para`). Conservas números, `no`, `sin` y `mi`, porque en una solicitud bancaria sí cambian el sentido.
 
-### Instrucciones
-
-1. Descarga los recursos NLTK necesarios e implementa el pipeline de preprocesamiento:
+### Código
 
 ```python
-import nltk
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from unidecode import unidecode
-import re
 
-# Descargar recursos NLTK
-nltk.download('punkt', quiet=True)
-nltk.download('punkt_tab', quiet=True)
-nltk.download('stopwords', quiet=True)
+nltk.data.path.append(CARPETA_NLTK)
+nltk.download("stopwords", download_dir=CARPETA_NLTK, quiet=True)
 
-# Stopwords en español - personalizadas para dominio bancario
-stop_words_es = set(stopwords.words('spanish'))
-# Mantener palabras relevantes para el dominio bancario
-palabras_relevantes = {"no", "sin", "contra", "sobre", "mi", "mis"}
-stop_words_es = stop_words_es - palabras_relevantes
+vacias = set(stopwords.words("spanish")) - {"no", "sin", "contra", "sobre", "mi", "mis"}
 
-print(f"Stopwords cargadas: {len(stop_words_es)} palabras")
-print(f"Ejemplo: {list(stop_words_es)[:10]}")
-```
 
-2. Define la función de preprocesamiento:
+def limpiar(texto):
+    texto = unidecode(str(texto).lower())
+    texto = re.sub(r"[^a-z0-9\s]", " ", texto)
+    return [p for p in texto.split() if p not in vacias and len(p) >= 2]
 
-```python
-def preprocesar_texto(texto):
-    """
-    Pipeline de preprocesamiento para solicitudes bancarias en español.
-    
-    Pasos:
-    1. Convertir a minúsculas
-    2. Eliminar acentos (normalización)
-    3. Eliminar caracteres especiales y números
-    4. Tokenizar
-    5. Eliminar stopwords
-    6. Filtrar tokens muy cortos (< 2 caracteres)
-    
-    Args:
-        texto (str): Texto de la solicitud bancaria
-        
-    Returns:
-        list: Lista de tokens preprocesados
-    """
-    if not isinstance(texto, str):
-        return []
-    
-    # 1. Minúsculas
-    texto = texto.lower()
-    
-    # 2. Eliminar acentos
-    texto = unidecode(texto)
-    
-    # 3. Eliminar caracteres especiales y números
-    texto = re.sub(r'[^a-z\s]', ' ', texto)
-    
-    # 4. Eliminar espacios múltiples
-    texto = re.sub(r'\s+', ' ', texto).strip()
-    
-    # 5. Tokenizar
-    tokens = texto.split()
-    
-    # 6. Eliminar stopwords y tokens cortos
-    tokens = [t for t in tokens if t not in stop_words_es and len(t) >= 2]
-    
-    return tokens
 
-# Probar con ejemplo
-ejemplo = "Solicito información sobre créditos de libre inversión disponibles"
-resultado = preprocesar_texto(ejemplo)
-print(f"Original: {ejemplo}")
-print(f"Procesado: {resultado}")
-```
+print(limpiar("Solicito información sobre créditos de libre inversión"))
 
-3. Aplica el preprocesamiento a todo el dataset:
-
-```python
-from tqdm import tqdm
-
-# Aplicar preprocesamiento
-tqdm.pandas(desc="Preprocesando textos")
-df["tokens"] = df["texto_solicitud"].progress_apply(preprocesar_texto)
-df["texto_limpio"] = df["tokens"].apply(lambda t: " ".join(t))
-
-# Estadísticas post-preprocesamiento
+df["tokens"] = df["solicitud"].apply(limpiar)
+df["texto_limpio"] = df["tokens"].apply(lambda tokens: " ".join(tokens))
 df["n_tokens"] = df["tokens"].apply(len)
-print(f"\nEstadísticas post-preprocesamiento:")
-print(f"  Tokens promedio: {df['n_tokens'].mean():.1f}")
-print(f"  Tokens mínimo: {df['n_tokens'].min()}")
-print(f"  Tokens máximo: {df['n_tokens'].max()}")
 
-# Vocabulario
-all_tokens = [token for tokens in df["tokens"] for token in tokens]
-vocabulario = sorted(set(all_tokens))
-print(f"  Vocabulario total: {len(vocabulario)} palabras únicas")
-
-# Guardar dataset procesado
-processed_path = os.path.join(PROCESSED_DIR, "banking_requests_processed.csv")
-df.to_csv(processed_path, index=False)
-print(f"\nDataset procesado guardado en: {processed_path}")
-
-# Mostrar ejemplos
-df[["texto_solicitud", "texto_limpio", "n_tokens"]].head(5)
+print("Palabras útiles por solicitud:", round(df["n_tokens"].mean(), 1))
+df[["solicitud", "texto_limpio"]].head(5)
 ```
 
-### Salida Esperada
-
-```
-Stopwords cargadas: ~308 palabras
-Original: Solicito información sobre créditos de libre inversión disponibles
-Procesado: ['solicito', 'informacion', 'sobre', 'creditos', 'libre', 'inversion', 'disponibles']
-
-Estadísticas post-preprocesamiento:
-  Tokens promedio: ~6.5
-  Tokens mínimo: 3
-  Tokens máximo: ~12
-  Vocabulario total: ~120 palabras únicas
-```
-
-### Verificación
+Guarda una copia que Excel puede abrir. En el notebook, `tokens` sigue siendo una lista.
 
 ```python
-assert "tokens" in df.columns
-assert "texto_limpio" in df.columns
-assert df["n_tokens"].min() >= 2, "Todos los textos deben tener al menos 2 tokens"
-assert len(vocabulario) > 50, "Vocabulario debe tener más de 50 palabras"
-print("✓ Preprocesamiento completado correctamente")
+copia = df.copy()
+copia["tokens"] = copia["texto_limpio"]
+copia.to_csv(os.path.join(CARPETA_PROCESADOS, "solicitudes_limpias.csv"), index=False, encoding="utf-8-sig")
+print("Archivo listo en data\\processed\\solicitudes_limpias.csv")
 ```
+
+### Qué debes ver
+
+`Solicito información sobre créditos...` queda como `solicito informacion sobre creditos libre inversion`. El promedio de palabras útiles queda en 6.9.
 
 ---
 
-## Paso 4: Entrenamiento de Embeddings Word2Vec
+## Paso 4. Separar los grupos y representar las palabras
 
-### Objetivo
+### Qué haces
 
-Entrenar un modelo Word2Vec sobre el corpus bancario para obtener representaciones vectoriales densas de las palabras del dominio, y construir una matriz de embeddings compatible con la capa Embedding de Keras.
+Separas los grupos en tres cajas antes de enseñarle nada al modelo:
 
-### Instrucciones
+- **Entrenamiento:** ejemplos con los que aprende.
+- **Validación:** solicitudes nuevas que se miran mientras aprende, para saber si está mejorando.
+- **Prueba:** solicitudes que se reservan hasta el final. No entran al entrenamiento.
 
-1. Entrena el modelo Word2Vec con Gensim:
+Después, cada palabra del entrenamiento se convierte en una lista de 100 números. Eso es Word2Vec. Una palabra que solo aparezca en validación o en prueba quedará como palabra desconocida.
+
+### Código
 
 ```python
 from gensim.models import Word2Vec
+from sklearn.model_selection import train_test_split
 
-# Parámetros del modelo
-EMBEDDING_DIM = 100
-W2V_WINDOW = 5
-W2V_MIN_COUNT = 1  # Incluir todas las palabras dado el tamaño del corpus
-W2V_EPOCHS = 100   # Más épocas por corpus pequeño
-W2V_WORKERS = 4
-
-# Preparar corpus (lista de listas de tokens)
-corpus = df["tokens"].tolist()
-
-print(f"Entrenando Word2Vec...")
-print(f"  Corpus: {len(corpus)} documentos")
-print(f"  Dimensión embeddings: {EMBEDDING_DIM}")
-print(f"  Ventana: {W2V_WINDOW}")
-print(f"  Épocas: {W2V_EPOCHS}")
-
-# Entrenar modelo
-w2v_model = Word2Vec(
-    sentences=corpus,
-    vector_size=EMBEDDING_DIM,
-    window=W2V_WINDOW,
-    min_count=W2V_MIN_COUNT,
-    workers=W2V_WORKERS,
-    epochs=W2V_EPOCHS,
-    seed=SEED,
-    sg=1  # Skip-gram (mejor para corpus pequeños)
+resumen = df.groupby("grupo")["categoria"].first().reset_index()
+grupos_train, grupos_temp, _, categorias_temp = train_test_split(
+    resumen["grupo"].to_numpy(),
+    resumen["categoria"].to_numpy(),
+    test_size=0.30,
+    random_state=SEMILLA,
+    stratify=resumen["categoria"].to_numpy(),
+)
+grupos_val, grupos_test = train_test_split(
+    grupos_temp, test_size=0.50, random_state=SEMILLA, stratify=categorias_temp,
 )
 
-# Guardar modelo
-w2v_path = os.path.join(EMBEDDINGS_DIR, "banking_w2v.model")
-w2v_model.save(w2v_path)
-print(f"\nModelo guardado en: {w2v_path}")
-print(f"Vocabulario del modelo: {len(w2v_model.wv)} palabras")
-```
+grupos_train = {int(g) for g in grupos_train}
+grupos_val = {int(g) for g in grupos_val}
+grupos_test = {int(g) for g in grupos_test}
 
-2. Explora los embeddings entrenados:
+df_train = df[df["grupo"].isin(grupos_train)].copy()
+df_val = df[df["grupo"].isin(grupos_val)].copy()
+df_test = df[df["grupo"].isin(grupos_test)].copy()
+
+print(f"Grupos  entrenamiento / validación / prueba: {len(grupos_train)} / {len(grupos_val)} / {len(grupos_test)}")
+print(f"Solicitudes entrenamiento / validación / prueba: {len(df_train)} / {len(df_val)} / {len(df_test)}")
+```
 
 ```python
-# Verificar palabras similares
-test_words = ["credito", "cuenta", "tarjeta", "cancelar", "cobro"]
+LARGO = max(8, int(df_train["n_tokens"].quantile(0.95)) + 2)
+TAMANO_VECTOR = 100
 
-for word in test_words:
-    if word in w2v_model.wv:
-        similares = w2v_model.wv.most_similar(word, topn=5)
-        print(f"\nPalabras similares a '{word}':")
-        for sim_word, score in similares:
-            print(f"  {sim_word}: {score:.3f}")
-    else:
-        print(f"\n'{word}' no está en el vocabulario")
+w2v = Word2Vec(
+    sentences=df_train["tokens"].tolist(),
+    vector_size=TAMANO_VECTOR,
+    window=5,
+    min_count=1,
+    workers=1,
+    epochs=30,
+    seed=SEMILLA,
+    sg=1,
+)
+w2v.save(os.path.join(CARPETA_VECTORES, "word2vec.model"))
+print(f"Cada frase se recorta a {LARGO} palabras")
+print(f"El diccionario de entrenamiento tiene {len(w2v.wv)} palabras")
+
+for palabra in ("tarjeta", "cancelar", "cuenta"):
+    if palabra in w2v.wv:
+        vecinas = ", ".join(p for p, _ in w2v.wv.most_similar(palabra, topn=3))
+        print(f"  {palabra} se parece a: {vecinas}")
 ```
 
-3. Construye el vocabulario indexado y la matriz de embeddings para Keras:
+Con tan pocos textos, "se parece" significa que esas palabras aparecieron juntas en las plantillas. Aun así, dos redacciones de la misma solicitud comparten las mismas palabras y el modelo puede usarlas.
 
 ```python
-# Construir vocabulario indexado
-# Índice 0 reservado para padding, índice 1 para token desconocido (UNK)
-word_to_idx = {"<PAD>": 0, "<UNK>": 1}
-idx_to_word = {0: "<PAD>", 1: "<UNK>"}
+vocabulario = sorted({p for tokens in df_train["tokens"] for p in tokens})
+palabra_a_numero = {"<RELLENO>": 0, "<DESCONOCIDA>": 1}
+numero_a_palabra = {0: "<RELLENO>", 1: "<DESCONOCIDA>"}
+for i, palabra in enumerate(vocabulario, start=2):
+    palabra_a_numero[palabra] = i
+    numero_a_palabra[i] = palabra
 
-for idx, word in enumerate(vocabulario, start=2):
-    word_to_idx[word] = idx
-    idx_to_word[idx] = word
+TAMANO_VOCAB = len(palabra_a_numero)
+matriz = np.zeros((TAMANO_VOCAB, TAMANO_VECTOR), dtype="float32")
+filas_conocidas = []
+for palabra, i in palabra_a_numero.items():
+    if palabra in ("<RELLENO>", "<DESCONOCIDA>"):
+        continue
+    matriz[i] = w2v.wv[palabra]
+    filas_conocidas.append(i)
+matriz[1] = matriz[filas_conocidas].mean(axis=0)
 
-VOCAB_SIZE = len(word_to_idx)
-print(f"Tamaño del vocabulario (con PAD y UNK): {VOCAB_SIZE}")
+np.save(os.path.join(CARPETA_VECTORES, "matriz.npy"), matriz)
+with open(os.path.join(CARPETA_VECTORES, "vocabulario.json"), "w", encoding="utf-8") as archivo:
+    json.dump(palabra_a_numero, archivo, ensure_ascii=False)
 
-# Construir matriz de embeddings
-embedding_matrix = np.zeros((VOCAB_SIZE, EMBEDDING_DIM))
-
-palabras_con_embedding = 0
-palabras_sin_embedding = 0
-
-for word, idx in word_to_idx.items():
-    if word in w2v_model.wv:
-        embedding_matrix[idx] = w2v_model.wv[word]
-        palabras_con_embedding += 1
-    elif word not in ["<PAD>", "<UNK>"]:
-        # Inicialización aleatoria para palabras sin embedding
-        embedding_matrix[idx] = np.random.normal(0, 0.1, EMBEDDING_DIM)
-        palabras_sin_embedding += 1
-
-print(f"Palabras con embedding W2V: {palabras_con_embedding}")
-print(f"Palabras sin embedding (aleatorio): {palabras_sin_embedding}")
-print(f"Forma de la matriz: {embedding_matrix.shape}")
-
-# Guardar artefactos
-np.save(os.path.join(EMBEDDINGS_DIR, "embedding_matrix.npy"), embedding_matrix)
-
-import json
-with open(os.path.join(EMBEDDINGS_DIR, "word_to_idx.json"), "w") as f:
-    json.dump(word_to_idx, f, ensure_ascii=False)
-
-print("✓ Matriz de embeddings y vocabulario guardados")
+print(f"Matriz lista: {matriz.shape[0]} palabras, {matriz.shape[1]} números cada una")
+print("La palabra desconocida usa el promedio de las palabras conocidas")
 ```
 
-### Salida Esperada
+### Qué debes ver
 
-```
-Entrenando Word2Vec...
-  Corpus: ~185 documentos
-  Dimensión embeddings: 100
-  Ventana: 5
-  Épocas: 100
-
-Modelo guardado en: /home/usuario/nlp_banking_lab/embeddings/banking_w2v.model
-Vocabulario del modelo: ~120 palabras
-
-Tamaño del vocabulario (con PAD y UNK): ~122
-Palabras con embedding W2V: ~120
-Palabras sin embedding (aleatorio): 0
-Forma de la matriz: (122, 100)
-```
-
-### Verificación
-
-```python
-assert embedding_matrix.shape == (VOCAB_SIZE, EMBEDDING_DIM)
-assert embedding_matrix[0].sum() == 0.0, "PAD debe ser vector cero"
-assert word_to_idx["<PAD>"] == 0
-assert word_to_idx["<UNK>"] == 1
-print("✓ Embeddings Word2Vec construidos correctamente")
-```
+35 grupos y 145 solicitudes para entrenar, 7 grupos para validación y 8 para prueba. Cada frase queda en 11 palabras. La matriz tiene 111 filas. La fila 0, el relleno, queda en ceros.
 
 ---
 
-## Paso 5: Generación de Pares de Entrenamiento
+## Paso 5. Armar las parejas
 
-### Objetivo
+### Qué haces
 
-Crear pares de solicitudes etiquetados como duplicados (label=1) o no duplicados (label=0) para entrenar la red siamesa, asegurando balance de clases.
+El modelo no lee una solicitud suelta. Lee dos y responde si son duplicadas.
 
-### Instrucciones
+- Pareja **positiva** (1): dos textos del mismo grupo.
+- Pareja **negativa** (0): dos textos de grupos distintos, dentro de la misma caja.
 
-1. Genera pares positivos (duplicados) y negativos (no duplicados):
+Las parejas de prueba no comparten solicitudes con las de entrenamiento.
+
+### Código
 
 ```python
 from itertools import combinations
 
-def generar_pares(dataframe, seed=42):
-    """
-    Genera pares balanceados de solicitudes duplicadas y no duplicadas.
-    
-    Pares positivos: solicitudes del mismo grupo_duplicado
-    Pares negativos: solicitudes de diferentes grupos (muestreados)
-    
-    Returns:
-        pairs_left: lista de textos izquierdos
-        pairs_right: lista de textos derechos
-        labels: lista de etiquetas (1=duplicado, 0=no duplicado)
-    """
-    rng = np.random.RandomState(seed)
-    
-    pairs_left = []
-    pairs_right = []
-    labels = []
-    
-    # Pares positivos: combinaciones dentro de cada grupo
-    grupos = dataframe.groupby("grupo_duplicado")["texto_limpio"].apply(list)
-    
-    for grupo_id, textos in grupos.items():
-        if len(textos) >= 2:
-            for t1, t2 in combinations(textos, 2):
-                pairs_left.append(t1)
-                pairs_right.append(t2)
-                labels.append(1)
-    
-    n_positivos = len(labels)
-    print(f"Pares positivos generados: {n_positivos}")
-    
-    # Pares negativos: muestrear pares de diferentes grupos
-    all_texts_by_group = grupos.to_dict()
-    group_ids = list(all_texts_by_group.keys())
-    
-    n_negativos_target = n_positivos  # Balance 1:1
-    neg_count = 0
-    
-    while neg_count < n_negativos_target:
-        g1, g2 = rng.choice(group_ids, size=2, replace=False)
-        t1 = rng.choice(all_texts_by_group[g1])
-        t2 = rng.choice(all_texts_by_group[g2])
-        pairs_left.append(t1)
-        pairs_right.append(t2)
-        labels.append(0)
-        neg_count += 1
-    
-    print(f"Pares negativos generados: {neg_count}")
-    print(f"Total de pares: {len(labels)}")
-    
-    return pairs_left, pairs_right, np.array(labels)
-
-# Generar pares
-pairs_left, pairs_right, labels = generar_pares(df, seed=SEED)
-
-print(f"\nDistribución de etiquetas:")
-print(f"  Duplicados (1): {(labels == 1).sum()}")
-print(f"  No duplicados (0): {(labels == 0).sum()}")
-print(f"  Ratio: {(labels == 1).sum() / len(labels):.2%}")
-```
-
-2. Convierte los textos a secuencias numéricas con padding:
-
-```python
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-def texto_a_secuencia(texto, word_to_idx, max_len):
-    """Convierte texto preprocesado a secuencia de índices con padding."""
-    tokens = texto.split()
-    secuencia = [word_to_idx.get(t, word_to_idx["<UNK>"]) for t in tokens]
-    return secuencia
 
-# Convertir todos los pares a secuencias
-seqs_left = [texto_a_secuencia(t, word_to_idx, MAX_SEQ_LEN) for t in pairs_left]
-seqs_right = [texto_a_secuencia(t, word_to_idx, MAX_SEQ_LEN) for t in pairs_right]
+def armar_parejas(datos, semilla=42):
+    azar = np.random.RandomState(semilla)
+    izquierda, derecha, etiquetas = [], [], []
+    por_grupo = datos.groupby("grupo")["texto_limpio"].apply(list)
 
-# Aplicar padding
-X_left = pad_sequences(seqs_left, maxlen=MAX_SEQ_LEN, padding='post', truncating='post')
-X_right = pad_sequences(seqs_right, maxlen=MAX_SEQ_LEN, padding='post', truncating='post')
+    for _, textos in por_grupo.items():
+        for a, b in combinations(list(textos), 2):
+            izquierda.append(a)
+            derecha.append(b)
+            etiquetas.append(1)
 
-print(f"Forma X_left: {X_left.shape}")
-print(f"Forma X_right: {X_right.shape}")
-print(f"MAX_SEQ_LEN: {MAX_SEQ_LEN}")
+    positivos = len(etiquetas)
+    ids = [int(g) for g in por_grupo.index]
+    textos = {int(g): list(v) for g, v in por_grupo.items()}
+    vistas = set()
+    intentos = 0
+    while etiquetas.count(0) < positivos and intentos < positivos * 50:
+        intentos += 1
+        g1, g2 = azar.choice(ids, size=2, replace=False)
+        a = textos[int(g1)][azar.randint(0, len(textos[int(g1)]))]
+        b = textos[int(g2)][azar.randint(0, len(textos[int(g2)]))]
+        if (a, b) in vistas:
+            continue
+        vistas.add((a, b))
+        izquierda.append(a)
+        derecha.append(b)
+        etiquetas.append(0)
+    return izquierda, derecha, np.array(etiquetas)
 
-# Ejemplo de secuencia
-print(f"\nEjemplo texto: '{pairs_left[0]}'")
-print(f"Secuencia: {X_left[0]}")
+
+def a_numeros(texto):
+    desconocida = palabra_a_numero["<DESCONOCIDA>"]
+    return [palabra_a_numero.get(p, desconocida) for p in str(texto).split()]
+
+
+def a_matriz(frases):
+    return pad_sequences([a_numeros(f) for f in frases], maxlen=LARGO, padding="post", value=0)
+
+
+parejas = {}
+for nombre, parte in (("train", df_train), ("val", df_val), ("test", df_test)):
+    izq, der, y = armar_parejas(parte, SEMILLA)
+    parejas[nombre] = {"izq": izq, "der": der, "y": y}
+    print(f"{nombre}: {len(y)} parejas, mitad duplicadas y mitad no")
+
+X_izq_train = a_matriz(parejas["train"]["izq"])
+X_der_train = a_matriz(parejas["train"]["der"])
+X_izq_val = a_matriz(parejas["val"]["izq"])
+X_der_val = a_matriz(parejas["val"]["der"])
+X_izq_test = a_matriz(parejas["test"]["izq"])
+X_der_test = a_matriz(parejas["test"]["der"])
+y_train = parejas["train"]["y"]
+y_val = parejas["val"]["y"]
+y_test = parejas["test"]["y"]
+
+print("Forma de una caja de entrenamiento:", X_izq_train.shape)
 ```
 
-3. Divide en conjuntos de entrenamiento y prueba:
+### Qué debes ver
 
-```python
-from sklearn.model_selection import train_test_split
-
-X_left_train, X_left_test, X_right_train, X_right_test, y_train, y_test = train_test_split(
-    X_left, X_right, labels,
-    test_size=0.2,
-    random_state=SEED,
-    stratify=labels
-)
-
-print(f"Conjunto de entrenamiento: {len(y_train)} pares")
-print(f"  Positivos: {(y_train == 1).sum()}, Negativos: {(y_train == 0).sum()}")
-print(f"Conjunto de prueba: {len(y_test)} pares")
-print(f"  Positivos: {(y_test == 1).sum()}, Negativos: {(y_test == 0).sum()}")
-```
-
-### Salida Esperada
-
-```
-Pares positivos generados: ~280
-Pares negativos generados: ~280
-Total de pares: ~560
-
-Forma X_left: (560, 16)
-Forma X_right: (560, 16)
-
-Conjunto de entrenamiento: ~448 pares
-Conjunto de prueba: ~112 pares
-```
-
-### Verificación
-
-```python
-assert X_left_train.shape[1] == MAX_SEQ_LEN
-assert X_right_train.shape[1] == MAX_SEQ_LEN
-assert len(y_train) == len(X_left_train)
-assert abs((y_train == 1).sum() - (y_train == 0).sum()) < 5, "Clases deben estar balanceadas"
-print("✓ Pares de entrenamiento generados correctamente")
-```
+480 parejas de entrenamiento, 126 de validación y 124 de prueba. En cada caja hay tantos duplicados como no duplicados. La forma termina en 11.
 
 ---
 
-## Paso 6: Diseño e Implementación de la Red Neuronal Siamesa
+## Paso 6. Armar la red
 
-### Objetivo
+### Qué haces
 
-Implementar una red neuronal siamesa con LSTM compartido que reciba dos solicitudes y prediga si son duplicadas, utilizando la API funcional de Keras.
+La red lee las dos solicitudes con el **mismo** lector de texto. Compara los dos resultados y devuelve una probabilidad de 0 a 1. Cerca de 1 significa "parece duplicado".
 
-### Instrucciones
+Los números de las palabras quedan fijos. Con pocos ejemplos, dejar que el modelo los cambie borra lo que Word2Vec acaba de aprender.
 
-1. Define la arquitectura de la red siamesa:
+### Código
 
 ```python
-import tensorflow as tf
-from tensorflow.keras.layers import (
-    Input, Embedding, LSTM, Dense, Dropout,
-    Lambda, BatchNormalization
-)
+from tensorflow.keras.layers import Dense, Embedding, Input, LSTM
 from tensorflow.keras.models import Model
-from tensorflow.keras import backend as K
 
-# Fijar semilla para TensorFlow
-tf.random.set_seed(SEED)
+tf.random.set_seed(SEMILLA)
 
-def crear_red_siamesa(vocab_size, embedding_dim, embedding_matrix, max_seq_len, lstm_units=64):
-    """
-    Crea una red neuronal siamesa con LSTM compartido.
-    
-    Arquitectura:
-    - Capa Embedding (pesos pre-entrenados Word2Vec)
-    - LSTM bidireccional compartido
-    - Cálculo de distancia Manhattan (L1)
-    - Capa densa de salida con sigmoid
-    
-    Args:
-        vocab_size: tamaño del vocabulario
-        embedding_dim: dimensión de los embeddings
-        embedding_matrix: matriz de pesos pre-entrenados
-        max_seq_len: longitud máxima de secuencia
-        lstm_units: unidades en la capa LSTM
-        
-    Returns:
-        model: modelo Keras compilado
-    """
-    # Inputs
-    input_left = Input(shape=(max_seq_len,), name="input_left")
-    input_right = Input(shape=(max_seq_len,), name="input_right")
-    
-    # Capa Embedding compartida (pesos pre-entrenados)
-    embedding_layer = Embedding(
-        input_dim=vocab_size,
-        output_dim=embedding_dim,
-        weights=[embedding_matrix],
-        input_length=max_seq_len,
-        trainable=True,  # Fine-tuning de embeddings
-        mask_zero=True,
-        name="shared_embedding"
-    )
-    
-    # LSTM compartido
-    shared_lstm = LSTM(
-        units=lstm_units,
-        return_sequences=False,
-        dropout=0.2,
-        recurrent_dropout=0.2,
-        name="shared_lstm"
-    )
-    
-    # Procesar ambas entradas con las mismas capas
-    embedded_left = embedding_layer(input_left)
-    embedded_right = embedding_layer(input_right)
-    
-    encoded_left = shared_lstm(embedded_left)
-    encoded_right = shared_lstm(embedded_right)
-    
-    # Calcular distancia Manhattan (L1)
-    l1_distance = Lambda(
-        lambda tensors: K.abs(tensors[0] - tensors[1]),
-        name="l1_distance"
-    )([encoded_left, encoded_right])
-    
-    # Capas densas de clasificación
-    x = BatchNormalization()(l1_distance)
-    x = Dense(64, activation='relu', name="dense_1")(x)
-    x = Dropout(0.3)(x)
-    x = Dense(32, activation='relu', name="dense_2")(x)
-    x = Dropout(0.2)(x)
-    
-    # Salida: probabilidad de ser duplicado
-    output = Dense(1, activation='sigmoid', name="output")(x)
-    
-    # Construir modelo
-    model = Model(inputs=[input_left, input_right], outputs=output, name="siamese_lstm")
-    
-    # Compilar
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-        loss='binary_crossentropy',
-        metrics=['accuracy']
-    )
-    
-    return model
 
-# Crear modelo
-model = crear_red_siamesa(
-    vocab_size=VOCAB_SIZE,
-    embedding_dim=EMBEDDING_DIM,
-    embedding_matrix=embedding_matrix,
-    max_seq_len=MAX_SEQ_LEN,
-    lstm_units=64
-)
+@tf.keras.utils.register_keras_serializable(package="laboratorio")
+class Distancia(tf.keras.layers.Layer):
+    def call(self, inputs, training=None):
+        return tf.abs(tf.subtract(inputs[0], inputs[1]))
 
-# Resumen del modelo
-model.summary()
+
+def crear_modelo():
+    entrada_1 = Input(shape=(LARGO,))
+    entrada_2 = Input(shape=(LARGO,))
+    palabras = Embedding(TAMANO_VOCAB, TAMANO_VECTOR, weights=[matriz], trainable=False, mask_zero=True)
+    lector = LSTM(64)
+    diferencia = Distancia()([lector(palabras(entrada_1)), lector(palabras(entrada_2))])
+    capa = Dense(32, activation="relu")(diferencia)
+    salida = Dense(1, activation="sigmoid")(capa)
+    modelo = Model([entrada_1, entrada_2], salida)
+    modelo.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+    return modelo
+
+
+def cargar_modelo(ruta):
+    return tf.keras.models.load_model(ruta, custom_objects={"Distancia": Distancia})
+
+
+modelo = crear_modelo()
+modelo.summary()
 ```
 
-2. Visualiza la arquitectura:
+### Qué debes ver
 
-```python
-# Contar parámetros por capa
-print("\nDetalle de parámetros:")
-print(f"  Embedding: {VOCAB_SIZE * EMBEDDING_DIM:,} parámetros")
-print(f"  LSTM: {4 * ((EMBEDDING_DIM + 64) * 64 + 64):,} parámetros (aprox)")
-print(f"  Total trainable: {model.count_params():,}")
-
-# Guardar diagrama de arquitectura (opcional, requiere graphviz)
-try:
-    tf.keras.utils.plot_model(
-        model,
-        to_file=os.path.join(BASE_DIR, "notebooks", "siamese_architecture.png"),
-        show_shapes=True,
-        show_layer_names=True
-    )
-    print("✓ Diagrama guardado en notebooks/siamese_architecture.png")
-except Exception as e:
-    print(f"Nota: No se pudo generar diagrama visual ({e})")
-    print("  Esto no afecta el entrenamiento del modelo.")
-```
-
-### Salida Esperada
-
-El resumen del modelo mostrará:
-- 2 capas Input (max_seq_len,)
-- 1 capa Embedding compartida
-- 1 capa LSTM compartida (64 unidades)
-- Capa Lambda para distancia L1
-- Capas Dense (64 → 32 → 1)
-- Total de parámetros: ~60,000-80,000
-
-### Verificación
-
-```python
-assert model.input_shape == [(None, MAX_SEQ_LEN), (None, MAX_SEQ_LEN)]
-assert model.output_shape == (None, 1)
-assert len(model.layers) > 5
-print("✓ Red siamesa construida correctamente")
-```
+Un resumen con dos entradas, una capa de palabras compartida, un LSTM compartido y una salida de un solo número. La capa de palabras figura como no entrenable.
 
 ---
 
-## Paso 7: Entrenamiento del Modelo Siamés
+## Paso 7. Entrenar
 
-### Objetivo
+### Qué haces
 
-Entrenar la red siamesa con los pares generados, utilizando callbacks para monitorear el rendimiento y prevenir sobreajuste.
+Ejecutas el entrenamiento. El modelo solo estudia las parejas de entrenamiento. La validación sirve para detenerse cuando deja de mejorar. La prueba sigue guardada.
 
-### Instrucciones
+La primera vuelta tarda más. Las siguientes suelen durar un segundo. Si la validación deja de mejorar, el proceso se detiene solo. Si sigue mejorando, completa las 40 vueltas.
 
-1. Configura los callbacks y entrena el modelo:
+### Código
 
 ```python
-from tensorflow.keras.callbacks import (
-    EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+
+ruta_mejor = os.path.join(CARPETA_MODELOS, "mejor_modelo.keras")
+history = modelo.fit(
+    [X_izq_train, X_der_train],
+    y_train,
+    validation_data=([X_izq_val, X_der_val], y_val),
+    epochs=40,
+    batch_size=32,
+    callbacks=[
+        EarlyStopping(monitor="val_loss", patience=8, restore_best_weights=True),
+        ModelCheckpoint(ruta_mejor, monitor="val_loss", save_best_only=True),
+    ],
 )
 
-# Callbacks
-callbacks = [
-    EarlyStopping(
-        monitor='val_loss',
-        patience=15,
-        restore_best_weights=True,
-        verbose=1
-    ),
-    ModelCheckpoint(
-        filepath=os.path.join(MODELS_DIR, "siamese_best.keras"),
-        monitor='val_accuracy',
-        save_best_only=True,
-        verbose=1
-    ),
-    ReduceLROnPlateau(
-        monitor='val_loss',
-        factor=0.5,
-        patience=7,
-        min_lr=1e-6,
-        verbose=1
-    )
-]
-
-# Parámetros de entrenamiento
-BATCH_SIZE = 32
-EPOCHS = 100
-
-print("Iniciando entrenamiento...")
-print(f"  Épocas máximas: {EPOCHS}")
-print(f"  Batch size: {BATCH_SIZE}")
-print(f"  Muestras entrenamiento: {len(y_train)}")
-print(f"  Muestras validación: {len(y_test)}")
-print("-" * 50)
-
-# Entrenar
-history = model.fit(
-    x=[X_left_train, X_right_train],
-    y=y_train,
-    validation_data=([X_left_test, X_right_test], y_test),
-    epochs=EPOCHS,
-    batch_size=BATCH_SIZE,
-    callbacks=callbacks,
-    verbose=1
+modelo.save(os.path.join(CARPETA_MODELOS, "modelo_final.keras"))
+pd.DataFrame(history.history).to_csv(
+    os.path.join(CARPETA_MODELOS, "historial.csv"), index=False, encoding="utf-8-sig"
 )
 
-print(f"\nEntrenamiento finalizado en época {len(history.history['loss'])}")
-print(f"Mejor val_accuracy: {max(history.history['val_accuracy']):.4f}")
-print(f"Mejor val_loss: {min(history.history['val_loss']):.4f}")
+print("Vueltas realizadas:", len(history.history["loss"]))
+print("Mejor acierto en validación:", round(max(history.history["val_accuracy"]), 3))
 ```
 
-2. Visualiza las curvas de entrenamiento:
-
 ```python
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-# Curva de pérdida
-axes[0].plot(history.history['loss'], label='Train Loss', linewidth=2)
-axes[0].plot(history.history['val_loss'], label='Val Loss', linewidth=2)
-axes[0].set_title('Evolución de la Pérdida (Binary Crossentropy)')
-axes[0].set_xlabel('Época')
-axes[0].set_ylabel('Pérdida')
-axes[0].legend()
-axes[0].grid(True, alpha=0.3)
-
-# Curva de accuracy
-axes[1].plot(history.history['accuracy'], label='Train Accuracy', linewidth=2)
-axes[1].plot(history.history['val_accuracy'], label='Val Accuracy', linewidth=2)
-axes[1].set_title('Evolución del Accuracy')
-axes[1].set_xlabel('Época')
-axes[1].set_ylabel('Accuracy')
-axes[1].legend()
-axes[1].grid(True, alpha=0.3)
-
+plt.plot(history.history["loss"], label="Entrenamiento")
+plt.plot(history.history["val_loss"], label="Validación (solicitudes nuevas)")
+plt.title("¿Está aprendiendo o solo memoriza?")
+plt.xlabel("Vuelta")
+plt.ylabel("Error")
+plt.legend()
+plt.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig(os.path.join(BASE_DIR, "notebooks", "training_curves.png"), dpi=100)
+plt.savefig(os.path.join(CARPETA_NOTEBOOKS, "entrenamiento.png"), dpi=100)
 plt.show()
 ```
 
-3. Guarda el modelo final:
+### Cómo leer la gráfica
 
-```python
-# Guardar modelo completo
-final_model_path = os.path.join(MODELS_DIR, "siamese_final.keras")
-model.save(final_model_path)
-print(f"Modelo final guardado en: {final_model_path}")
+La línea de entrenamiento es el error con los ejemplos que ya vio. La de validación es el error con solicitudes de otros grupos. Si la primera baja y la segunda se queda quieta o sube, el modelo memorizó el taller.
 
-# Guardar historial de entrenamiento
-history_df = pd.DataFrame(history.history)
-history_df.to_csv(os.path.join(MODELS_DIR, "training_history.csv"), index=False)
-print("Historial de entrenamiento guardado")
-```
+### Qué debes ver
 
-### Salida Esperada
-
-```
-Iniciando entrenamiento...
-  Épocas máximas: 100
-  Batch size: 32
-  Muestras entrenamiento: ~448
-  Muestras validación: ~112
-
-Entrenamiento finalizado en época ~40-60
-Mejor val_accuracy: ~0.80-0.92
-Mejor val_loss: ~0.30-0.50
-```
-
-Las curvas de entrenamiento deben mostrar convergencia sin divergencia significativa entre train y val (indicando que no hay sobreajuste severo).
-
-### Verificación
-
-```python
-assert len(history.history['loss']) > 5, "Modelo debe entrenar más de 5 épocas"
-assert max(history.history['val_accuracy']) > 0.65, "Val accuracy debe superar 0.65"
-assert os.path.exists(os.path.join(MODELS_DIR, "siamese_best.keras"))
-print("✓ Entrenamiento completado correctamente")
-```
+Con esta semilla el mejor acierto de validación queda cerca de 0.90 y el archivo `models\mejor_modelo.keras` queda guardado. Si el número baja de 0.60, avisa al facilitador antes de seguir.
 
 ---
 
-## Paso 8: Evaluación del Modelo con Métricas de Clasificación
+## Paso 8. Probar con solicitudes que no vio
 
-### Objetivo
+### Qué haces
 
-Evaluar exhaustivamente el modelo siamés con métricas estándar de clasificación binaria (accuracy, precision, recall, F1-score, ROC-AUC) y analizar los resultados en contexto bancario.
+Mides el modelo solo con la caja de prueba. Al lado calculas una comparación simple: si las dos frases comparten al menos la mitad de sus palabras, se marcan como duplicadas. Esa comparación dice cuánto se resuelve mirando las palabras, sin red neuronal.
 
-### Instrucciones
+Luego escribes solicitudes nuevas y cambias el umbral. El umbral es tu decisión: a partir de qué probabilidad el banco trata el par como duplicado.
 
-1. Genera predicciones sobre el conjunto de prueba:
-
-```python
-from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score, f1_score,
-    roc_auc_score, classification_report, confusion_matrix,
-    roc_curve
-)
-
-# Cargar mejor modelo
-best_model = tf.keras.models.load_model(
-    os.path.join(MODELS_DIR, "siamese_best.keras")
-)
-
-# Predicciones
-y_pred_proba = best_model.predict([X_left_test, X_right_test]).flatten()
-y_pred = (y_pred_proba >= 0.5).astype(int)
-
-print("Predicciones generadas:")
-print(f"  Rango probabilidades: [{y_pred_proba.min():.4f}, {y_pred_proba.max():.4f}]")
-print(f"  Predicciones positivas: {y_pred.sum()}")
-print(f"  Predicciones negativas: {(1 - y_pred).sum()}")
-```
-
-2. Calcula y muestra todas las métricas:
+### Código
 
 ```python
-# Métricas principales
-accuracy = accuracy_score(y_test, y_pred)
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
-f1 = f1_score(y_test, y_pred)
-roc_auc = roc_auc_score(y_test, y_pred_proba)
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
 
-print("=" * 60)
-print("MÉTRICAS DE EVALUACIÓN - DETECCIÓN DE DUPLICADOS BANCARIOS")
-print("=" * 60)
-print(f"\n  Accuracy:  {accuracy:.4f}  ({accuracy*100:.1f}%)")
-print(f"  Precision: {precision:.4f}  ({precision*100:.1f}%)")
-print(f"  Recall:    {recall:.4f}  ({recall*100:.1f}%)")
-print(f"  F1-Score:  {f1:.4f}  ({f1*100:.1f}%)")
-print(f"  ROC-AUC:   {roc_auc:.4f}  ({roc_auc*100:.1f}%)")
 
-print("\n" + "-" * 60)
-print("\nReporte de Clasificación Completo:")
-print(classification_report(
-    y_test, y_pred,
-    target_names=["No Duplicado", "Duplicado"],
-    digits=4
+def palabras_compartidas(a, b):
+    sa, sb = set(a.split()), set(b.split())
+    return len(sa & sb) / len(sa | sb) if (sa or sb) else 0
+
+
+base = np.array([
+    1 if palabras_compartidas(a, b) >= 0.5 else 0
+    for a, b in zip(parejas["test"]["izq"], parejas["test"]["der"])
+])
+
+mejor = cargar_modelo(ruta_mejor)
+probabilidades = mejor.predict([X_izq_test, X_der_test], verbose=0).flatten()
+UMBRAL = 0.5
+predichos = (probabilidades >= UMBRAL).astype(int)
+
+print("Comparando palabras (umbral 0.5 de palabras compartidas)")
+print("  Acierto:", round(accuracy_score(y_test, base), 3))
+print()
+print("Red neuronal, en solicitudes de grupos nuevos")
+print("  Acierto:   ", round(accuracy_score(y_test, predichos), 3))
+print("  Precisión: ", round(precision_score(y_test, predichos, zero_division=0), 3))
+print("  Cobertura: ", round(recall_score(y_test, predichos, zero_division=0), 3))
+print("  F1:        ", round(f1_score(y_test, predichos, zero_division=0), 3))
+print("  ROC-AUC:   ", round(roc_auc_score(y_test, probabilidades), 3))
+print()
+print(pd.crosstab(
+    pd.Series(y_test, name="Real"),
+    pd.Series(predichos, name="Predicho"),
 ))
 ```
 
-3. Visualiza la matriz de confusión y la curva ROC:
+Así se leen esas cifras, de cada 100 casos:
+
+- **Acierto:** en cuántos la respuesta fue la correcta.
+- **Precisión:** de los que marcó como duplicados, cuántos lo eran. Si es baja, el banco mezcla solicitudes distintas.
+- **Cobertura:** de los duplicados reales, cuántos encontró. Si es baja, se cuela trabajo repetido.
+- **ROC-AUC:** qué tan bien separa duplicados de no duplicados, sin depender del 0.5.
 
 ```python
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+def probabilidad(texto_1, texto_2, umbral=0.5):
+    limpio_1 = " ".join(limpiar(texto_1))
+    limpio_2 = " ".join(limpiar(texto_2))
+    entrada = [a_matriz([limpio_1]), a_matriz([limpio_2])]
+    valor = float(mejor.predict(entrada, verbose=0)[0][0])
+    marca = "DUPLICADO" if valor >= umbral else "NO DUPLICADO"
+    print(f"{valor:.2f}  {marca}   | {texto_1}")
+    print(f"           | {texto_2}")
+    print()
+    return valor
 
-# Matriz de confusión
-cm = confusion_matrix(y_test, y_pred)
-sns.heatmap(
-    cm, annot=True, fmt='d', cmap='Blues',
-    xticklabels=["No Duplicado", "Duplicado"],
-    yticklabels=["No Duplicado", "Duplicado"],
-    ax=axes[0]
-)
-axes[0].set_title("Matriz de Confusión")
-axes[0].set_xlabel("Predicción")
-axes[0].set_ylabel("Real")
 
-# Curva ROC
-fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
-axes[1].plot(fpr, tpr, 'b-', linewidth=2, label=f'ROC (AUC = {roc_auc:.3f})')
-axes[1].plot([0, 1], [0, 1], 'r--', linewidth=1, label='Aleatorio')
-axes[1].set_title("Curva ROC")
-axes[1].set_xlabel("Tasa de Falsos Positivos (FPR)")
-axes[1].set_ylabel("Tasa de Verdaderos Positivos (TPR)")
-axes[1].legend(loc='lower right')
-axes[1].grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.savefig(os.path.join(BASE_DIR, "notebooks", "evaluation_metrics.png"), dpi=100)
-plt.show()
+print("Umbral 0.5")
+probabilidad("Deseo cancelar mi tarjeta de crédito por no uso", "Quisiera cancelar mi tarjeta de crédito por no uso, por favor")
+probabilidad("Necesito conocer el saldo actual de mi cuenta de ahorros", "Requiero conocer el saldo actual de mi cuenta de ahorros por favor")
+probabilidad("Deseo cancelar mi tarjeta de crédito por no uso", "Necesito financiamiento para compra de vivienda")
+probabilidad("Necesito conocer el saldo actual de mi cuenta de ahorros", "Solicito la cancelación de mi cuenta de ahorros")
 ```
 
-4. Análisis de errores y prueba con ejemplos nuevos:
+La celda siguiente repite pares con el umbral en 0.9. Compara qué marca cambia.
 
 ```python
-# Análisis de errores
-print("\n" + "=" * 60)
-print("ANÁLISIS DE ERRORES")
-print("=" * 60)
-
-# Falsos negativos (duplicados no detectados)
-fn_mask = (y_test == 1) & (y_pred == 0)
-fn_indices = np.where(fn_mask)[0]
-print(f"\nFalsos Negativos (duplicados no detectados): {fn_mask.sum()}")
-if fn_mask.sum() > 0:
-    for i in fn_indices[:3]:
-        left_text = " ".join([idx_to_word.get(idx, "?") for idx in X_left_test[i] if idx != 0])
-        right_text = " ".join([idx_to_word.get(idx, "?") for idx in X_right_test[i] if idx != 0])
-        print(f"  Par {i}: prob={y_pred_proba[i]:.3f}")
-        print(f"    Izq: {left_text}")
-        print(f"    Der: {right_text}")
-
-# Falsos positivos (no duplicados marcados como duplicados)
-fp_mask = (y_test == 0) & (y_pred == 1)
-fp_indices = np.where(fp_mask)[0]
-print(f"\nFalsos Positivos (no duplicados marcados como duplicados): {fp_mask.sum()}")
-if fp_mask.sum() > 0:
-    for i in fp_indices[:3]:
-        left_text = " ".join([idx_to_word.get(idx, "?") for idx in X_left_test[i] if idx != 0])
-        right_text = " ".join([idx_to_word.get(idx, "?") for idx in X_right_test[i] if idx != 0])
-        print(f"  Par {i}: prob={y_pred_proba[i]:.3f}")
-        print(f"    Izq: {left_text}")
-        print(f"    Der: {right_text}")
+print("Mismos pares, umbral 0.9")
+probabilidad("Deseo cancelar mi tarjeta de crédito por no uso", "Quisiera cancelar mi tarjeta de crédito por no uso, por favor", umbral=0.9)
+probabilidad("Necesito conocer el saldo actual de mi cuenta de ahorros", "Requiero conocer el saldo actual de mi cuenta de ahorros por favor", umbral=0.9)
+probabilidad("Necesito conocer el saldo actual de mi cuenta de ahorros", "Solicito la cancelación de mi cuenta de ahorros", umbral=0.9)
 ```
 
-5. Prueba el modelo con nuevos ejemplos:
+### Qué debes ver
 
-```python
-def predecir_duplicado(texto1, texto2, model, word_to_idx, max_len):
-    """
-    Predice si dos solicitudes son duplicadas.
-    
-    Args:
-        texto1, texto2: textos de solicitudes bancarias
-        model: modelo siamés entrenado
-        word_to_idx: diccionario de vocabulario
-        max_len: longitud máxima de secuencia
-        
-    Returns:
-        probabilidad de ser duplicado
-    """
-    # Preprocesar
-    tokens1 = preprocesar_texto(texto1)
-    tokens2 = preprocesar_texto(texto2)
-    
-    # Convertir a secuencias
-    seq1 = [word_to_idx.get(t, word_to_idx["<UNK>"]) for t in tokens1]
-    seq2 = [word_to_idx.get(t, word_to_idx["<UNK>"]) for t in tokens2]
-    
-    # Padding
-    seq1 = pad_sequences([seq1], maxlen=max_len, padding='post', truncating='post')
-    seq2 = pad_sequences([seq2], maxlen=max_len, padding='post', truncating='post')
-    
-    # Predecir
-    prob = model.predict([seq1, seq2], verbose=0)[0][0]
-    return prob
-
-# Ejemplos de prueba
-print("\n" + "=" * 60)
-print("PRUEBAS CON NUEVOS EJEMPLOS")
-print("=" * 60)
-
-test_cases = [
-    (
-        "Quiero cancelar mi tarjeta de crédito",
-        "Deseo dar de baja mi tarjeta de crédito",
-        "Esperado: DUPLICADO"
-    ),
-    (
-        "Necesito un préstamo personal",
-        "Solicito un crédito de consumo",
-        "Esperado: DUPLICADO"
-    ),
-    (
-        "Quiero cancelar mi tarjeta",
-        "Necesito un préstamo hipotecario",
-        "Esperado: NO DUPLICADO"
-    ),
-    (
-        "Reclamo por cobro indebido en mi cuenta",
-        "Presento queja por cargo no reconocido",
-        "Esperado: DUPLICADO"
-    ),
-    (
-        "Actualizar mi número de teléfono",
-        "Solicito información de créditos",
-        "Esperado: NO DUPLICADO"
-    ),
-]
-
-for t1, t2, esperado in test_cases:
-    prob = predecir_duplicado(t1, t2, best_model, word_to_idx, MAX_SEQ_LEN)
-    resultado = "DUPLICADO" if prob >= 0.5 else "NO DUPLICADO"
-    emoji = "✓" if esperado.split(": ")[1] == resultado else "✗"
-    print(f"\n{emoji} Prob: {prob:.3f} → {resultado} ({esperado})")
-    print(f"  T1: {t1}")
-    print(f"  T2: {t2}")
-```
-
-### Salida Esperada
-
-```
-==============================================================
-MÉTRICAS DE EVALUACIÓN - DETECCIÓN DE DUPLICADOS BANCARIOS
-==============================================================
-
-  Accuracy:  0.8125  (81.2%)
-  Precision: 0.8200  (82.0%)
-  Recall:    0.8000  (80.0%)
-  F1-Score:  0.8099  (81.0%)
-  ROC-AUC:   0.8750  (87.5%)
-```
-
-Nota: Los valores exactos variarán según la ejecución, pero se espera un accuracy entre 0.70-0.92 dado el tamaño del corpus.
-
-### Verificación
-
-```python
-assert accuracy > 0.60, f"Accuracy ({accuracy:.3f}) debe superar 0.60"
-assert roc_auc > 0.60, f"ROC-AUC ({roc_auc:.3f}) debe superar 0.60"
-print(f"\n{'='*60}")
-print("✓ EVALUACIÓN COMPLETADA EXITOSAMENTE")
-print(f"{'='*60}")
-print(f"\nResumen final del sistema:")
-print(f"  - Dataset: {df.shape[0]} solicitudes en {df['grupo_duplicado'].nunique()} grupos")
-print(f"  - Vocabulario: {VOCAB_SIZE} tokens")
-print(f"  - Embeddings: Word2Vec {EMBEDDING_DIM}D")
-print(f"  - Modelo: Siamesa LSTM (64 unidades)")
-print(f"  - Pares de entrenamiento: {len(y_train)}")
-print(f"  - Pares de evaluación: {len(y_test)}")
-print(f"  - Accuracy: {accuracy:.4f}")
-print(f"  - F1-Score: {f1:.4f}")
-print(f"  - ROC-AUC: {roc_auc:.4f}")
-```
+Con esta semilla, comparar palabras acierta 1.00 y la red acierta 0.976 en la prueba. Anota los dos números. En este taller las variantes comparten casi todo el texto, por eso la comparación de palabras sale tan alta.
 
 ---
 
-## Paso 9: Manejo de Tokens Fuera de Vocabulario (OOV)
+## Paso 9. Una palabra que el modelo no conoce
 
-### Objetivo
+### Qué haces
 
-Implementar una estrategia robusta para manejar tokens que no aparecen en el vocabulario de entrenamiento (Out-Of-Vocabulary), asegurando que el sistema funcione correctamente con solicitudes que contengan palabras nuevas.
+Escribes una solicitud con una palabra que no estaba en los ejemplos de entrenamiento. El sistema no adivina un sinónimo: la guarda como `<DESCONOCIDA>` y sigue respondiendo una probabilidad.
 
-### Instrucciones
-
-1. Analiza el impacto de tokens fuera de vocabulario en el sistema:
+### Código
 
 ```python
-# Demostrar el manejo de tokens OOV
-print("=" * 60)
-print("MANEJO DE TOKENS FUERA DE VOCABULARIO (OOV)")
-print("=" * 60)
+palabra_nueva = "refinanciamiento"
+print("Número de la palabra nueva:", a_numeros(palabra_nueva))
+print("1 significa desconocida")
 
-# Ejemplos con palabras que probablemente no están en el vocabulario
-textos_con_oov = [
-    "Solicito refinanciamiento de mi deuda hipotecaria vigente",
-    "Necesito una reestructuración de mis obligaciones crediticias",
-    "Quiero tramitar un microcrédito para emprendimiento",
-    "Requiero información sobre criptomonedas y blockchain",
-]
-
-print("\nAnálisis de tokens OOV por texto:")
-for texto in textos_con_oov:
-    tokens = preprocesar_texto(texto)
-    oov_tokens = [t for t in tokens if t not in word_to_idx or word_to_idx[t] == word_to_idx["<UNK>"]]
-    in_vocab = [t for t in tokens if t in word_to_idx and word_to_idx[t] != word_to_idx["<UNK>"]]
-    
-    print(f"\n  Texto: '{texto}'")
-    print(f"  Tokens totales: {len(tokens)}")
-    print(f"  En vocabulario: {in_vocab}")
-    print(f"  Fuera de vocabulario (OOV): {oov_tokens}")
-    print(f"  Tasa OOV: {len(oov_tokens)/max(len(tokens),1)*100:.1f}%")
-```
-
-2. Implementa estrategias mejoradas para tokens OOV:
-
-```python
-def texto_a_secuencia_robusto(texto, word_to_idx, max_len, w2v_model=None):
-    """
-    Convierte texto a secuencia con manejo robusto de tokens OOV.
-    
-    Estrategias para tokens OOV:
-    1. Buscar subpalabras que estén en el vocabulario
-    2. Asignar índice UNK si no se encuentra coincidencia
-    
-    Args:
-        texto: texto preprocesado (string de tokens separados por espacio)
-        word_to_idx: diccionario palabra -> índice
-        max_len: longitud máxima de secuencia
-        w2v_model: modelo Word2Vec (opcional, para búsqueda de similares)
-    
-    Returns:
-        secuencia: lista de índices numéricos
-        oov_count: número de tokens OOV encontrados
-    """
-    tokens = texto.split() if isinstance(texto, str) else texto
-    secuencia = []
-    oov_count = 0
-    
-    for token in tokens:
-        if token in word_to_idx:
-            secuencia.append(word_to_idx[token])
-        else:
-            # Estrategia 1: buscar subpalabra más larga en vocabulario
-            found = False
-            if len(token) > 3:
-                for sub_len in range(len(token) - 1, 2, -1):
-                    sub_token = token[:sub_len]
-                    if sub_token in word_to_idx:
-                        secuencia.append(word_to_idx[sub_token])
-                        found = True
-                        break
-            
-            # Estrategia 2: buscar palabra más similar en Word2Vec
-            if not found and w2v_model is not None:
-                try:
-                    similares = w2v_model.wv.most_similar(token, topn=1)
-                    palabra_similar = similares[0][0]
-                    if palabra_similar in word_to_idx:
-                        secuencia.append(word_to_idx[palabra_similar])
-                        found = True
-                except (KeyError, IndexError):
-                    pass
-            
-            # Fallback: usar token UNK
-            if not found:
-                secuencia.append(word_to_idx["<UNK>"])
-                oov_count += 1
-    
-    return secuencia, oov_count
-
-# Probar con textos que contienen OOV
-print("\nPrueba de conversión robusta:")
-for texto in textos_con_oov:
-    tokens = preprocesar_texto(texto)
-    texto_limpio = " ".join(tokens)
-    seq, oov = texto_a_secuencia_robusto(texto_limpio, word_to_idx, MAX_SEQ_LEN, w2v_model)
-    print(f"\n  '{texto[:50]}...'")
-    print(f"  Secuencia: {seq[:8]}... | OOV restantes: {oov}")
-```
-
-3. Evalúa el impacto de tokens OOV en las predicciones:
-
-```python
-# Predicción con textos que contienen OOV
-print("\nPredicciones con textos que contienen tokens OOV:")
-print("-" * 60)
-
-oov_test_cases = [
-    (
-        "Solicito refinanciamiento de mi deuda",
-        "Necesito reestructurar mi préstamo actual",
-        "Esperado: DUPLICADO (ambos sobre reestructuración de deuda)"
-    ),
-    (
-        "Quiero tramitar un microcrédito",
-        "Deseo cancelar mi cuenta corriente",
-        "Esperado: NO DUPLICADO (diferentes categorías)"
-    ),
-]
-
-for t1, t2, esperado in oov_test_cases:
-    prob = predecir_duplicado(t1, t2, best_model, word_to_idx, MAX_SEQ_LEN)
-    resultado = "DUPLICADO" if prob >= 0.5 else "NO DUPLICADO"
-    print(f"\n  Prob: {prob:.3f} → {resultado}")
-    print(f"  T1: {t1}")
-    print(f"  T2: {t2}")
-    print(f"  {esperado}")
-
-print("\n" + "=" * 60)
-print("NOTA SOBRE TOKENS OOV EN PRODUCCIÓN:")
-print("=" * 60)
-print("""
-En un sistema de producción, las estrategias para mitigar el impacto de
-tokens OOV incluyen:
-
-1. Ampliar el corpus de entrenamiento con más solicitudes bancarias
-2. Usar embeddings pre-entrenados más grandes (FastText para español)
-3. Implementar subword tokenization (BPE, WordPiece)
-4. Reentrenar periódicamente el modelo con datos nuevos
-5. Usar el índice UNK con un embedding promedio del vocabulario
-
-El token <UNK> (índice 1) en nuestra implementación captura todas las
-palabras desconocidas, asignándoles un vector que se ajusta durante el
-entrenamiento para representar "palabra desconocida en contexto bancario".
-""")
-```
-
-### Salida Esperada
-
-```
-==============================================================
-MANEJO DE TOKENS FUERA DE VOCABULARIO (OOV)
-==============================================================
-
-Análisis de tokens OOV por texto:
-
-  Texto: 'Solicito refinanciamiento de mi deuda hipotecaria vigente'
-  Tokens totales: 5
-  En vocabulario: ['solicito', 'mi']
-  Fuera de vocabulario (OOV): ['refinanciamiento', 'deuda', 'vigente']
-  Tasa OOV: 60.0%
-```
-
-### Verificación
-
-```python
-# Verificar que el sistema maneja OOV sin errores
-for texto in textos_con_oov:
-    tokens = preprocesar_texto(texto)
-    texto_limpio = " ".join(tokens)
-    seq, oov = texto_a_secuencia_robusto(texto_limpio, word_to_idx, MAX_SEQ_LEN)
-    assert len(seq) > 0, "La secuencia no debe estar vacía"
-    assert all(0 <= idx < VOCAB_SIZE for idx in seq), "Todos los índices deben ser válidos"
-
-# Verificar predicción con OOV no produce errores
-prob = predecir_duplicado(
+probabilidad(
     "Solicito refinanciamiento hipotecario urgente",
     "Necesito reestructurar mi crédito de vivienda",
-    best_model, word_to_idx, MAX_SEQ_LEN
 )
-assert 0.0 <= prob <= 1.0, "La probabilidad debe estar en [0, 1]"
-print("✓ Manejo de tokens OOV implementado correctamente")
 ```
+
+### Qué debes ver
+
+La lista `[1]`. La probabilidad sale entre 0 y 1 aunque el modelo no haya visto esa palabra.
 
 ---
 
-## Paso 10: Resumen Final y Conclusiones
+## Paso 10. Cierre
 
-### Objetivo
+### Qué haces
 
-Consolidar todo el trabajo realizado, documentar los artefactos generados y establecer próximos pasos para mejorar el sistema.
+Reúnes los archivos y respondes tres preguntas en una celda de texto del notebook (botón **+ Texto**, o celda Markdown).
 
-### Instrucciones
-
-1. Genera el resumen ejecutivo del laboratorio:
+### Código
 
 ```python
-print("=" * 70)
-print("   RESUMEN EJECUTIVO - SISTEMA DE DETECCIÓN DE DUPLICADOS BANCARIOS")
-print("=" * 70)
-
-print(f"""
-┌─────────────────────────────────────────────────────────────────────┐
-│ PIPELINE IMPLEMENTADO                                                │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  1. Generación de datos  →  {df.shape[0]} solicitudes, 5 categorías         │
-│  2. Preprocesamiento NLP →  Tokenización + Normalización + Stopwords │
-│  3. Word2Vec embeddings  →  {EMBEDDING_DIM}D, {VOCAB_SIZE} tokens, Skip-gram          │
-│  4. Generación de pares  →  {len(labels)} pares balanceados (50/50)        │
-│  5. Red Siamesa LSTM     →  Embedding + LSTM(64) + L1 + Dense       │
-│  6. Entrenamiento        →  {len(history.history['loss'])} épocas, callbacks adaptativos     │
-│  7. Evaluación           →  Acc={accuracy:.3f}, F1={f1:.3f}, AUC={roc_auc:.3f}       │
-│  8. Manejo OOV           →  Token <UNK> + estrategias de fallback    │
-│                                                                       │
-└─────────────────────────────────────────────────────────────────────┘
-""")
-
-print("\nARTEFACTOS GENERADOS:")
-print(f"  📁 {RAW_DIR}/banking_requests.csv")
-print(f"  📁 {PROCESSED_DIR}/banking_requests_processed.csv")
-print(f"  📁 {EMBEDDINGS_DIR}/banking_w2v.model")
-print(f"  📁 {EMBEDDINGS_DIR}/embedding_matrix.npy")
-print(f"  📁 {EMBEDDINGS_DIR}/word_to_idx.json")
-print(f"  📁 {MODELS_DIR}/siamese_best.keras")
-print(f"  📁 {MODELS_DIR}/siamese_final.keras")
-print(f"  📁 {MODELS_DIR}/training_history.csv")
-
-print(f"""
-INTERPRETACIÓN EN CONTEXTO BANCARIO:
-─────────────────────────────────────
-• Precision ({precision:.3f}): De las solicitudes marcadas como duplicadas,
-  el {precision*100:.1f}% realmente lo son. Importante para no fusionar
-  solicitudes diferentes por error.
-
-• Recall ({recall:.3f}): De todas las solicitudes duplicadas reales,
-  el sistema detecta el {recall*100:.1f}%. Importante para reducir la
-  carga operativa de procesar solicitudes repetidas.
-
-• F1-Score ({f1:.3f}): Balance entre precision y recall, útil como
-  métrica única de rendimiento del sistema.
-
-• ROC-AUC ({roc_auc:.3f}): Capacidad discriminativa del modelo
-  independiente del umbral de decisión.
-
-LIMITACIONES Y PRÓXIMOS PASOS:
-──────────────────────────────
-1. Corpus pequeño → Ampliar con datos reales (anonimizados)
-2. Word2Vec básico → Migrar a FastText o transformers (BETO/RoBERTa)
-3. LSTM simple → Explorar Bi-LSTM o mecanismos de atención
-4. Umbral fijo (0.5) → Optimizar umbral según costo de negocio
-5. Sin validación cruzada → Implementar k-fold para estimación robusta
-""")
+acierto = accuracy_score(y_test, predichos)
+acierto_palabras = accuracy_score(y_test, base)
+print("Solicitudes:", len(df))
+print("Grupos entrenamiento / validación / prueba:", len(grupos_train), "/", len(grupos_val), "/", len(grupos_test))
+print("Parejas entrenamiento / validación / prueba:", len(y_train), "/", len(y_val), "/", len(y_test))
+print("Acierto comparando palabras:", round(acierto_palabras, 3))
+print("Acierto de la red en la prueba:", round(acierto, 3))
+print()
+for ruta in (
+    os.path.join(CARPETA_DATOS, "solicitudes.csv"),
+    os.path.join(CARPETA_PROCESADOS, "solicitudes_limpias.csv"),
+    os.path.join(CARPETA_VECTORES, "word2vec.model"),
+    ruta_mejor,
+):
+    print("OK" if os.path.exists(ruta) else "FALTA", ruta)
 ```
 
-2. Verificación final del sistema completo:
+Responde con tus números:
 
-```python
-# Verificación integral
-print("\n" + "=" * 60)
-print("VERIFICACIÓN INTEGRAL DEL SISTEMA")
-print("=" * 60)
+1. ¿La red acertó más, igual o menos que la comparación de palabras? ¿Qué parte del trabajo ya resolvía mirar las palabras repetidas?
+2. Si mezclar dos solicitudes distintas le cuesta más al banco que revisar un duplicado a mano, ¿dejarías el umbral en 0.5 o lo subirías a 0.9? Mira si a 0.9 alguna pareja que sí era la misma solicitud dejó de marcarse.
+3. ¿Qué pasó con la probabilidad cuando escribiste "refinanciamiento", una palabra que no estaba en el entrenamiento?
 
-checks = [
-    ("Dataset generado", df.shape[0] > 150),
-    ("Preprocesamiento aplicado", "tokens" in df.columns),
-    ("Vocabulario construido", VOCAB_SIZE > 50),
-    ("Embeddings entrenados", embedding_matrix.shape[1] == EMBEDDING_DIM),
-    ("Pares generados", len(labels) > 100),
-    ("Modelo entrenado", len(history.history['loss']) > 5),
-    ("Accuracy > 0.60", accuracy > 0.60),
-    ("ROC-AUC > 0.60", roc_auc > 0.60),
-    ("Modelo guardado", os.path.exists(os.path.join(MODELS_DIR, "siamese_best.keras"))),
-    ("Predicción funcional", 0 <= prob <= 1),
-]
+### Qué debes ver
 
-all_passed = True
-for check_name, check_result in checks:
-    status = "✓" if check_result else "✗"
-    if not check_result:
-        all_passed = False
-    print(f"  {status} {check_name}")
-
-print(f"\n{'='*60}")
-if all_passed:
-    print("  ✓ TODAS LAS VERIFICACIONES PASARON EXITOSAMENTE")
-    print("  ✓ LABORATORIO COMPLETADO")
-else:
-    print("  ⚠ ALGUNAS VERIFICACIONES FALLARON - REVISAR PASOS ANTERIORES")
-print(f"{'='*60}")
-```
-
-### Salida Esperada
-
-Todas las verificaciones deben mostrar ✓ y el mensaje final debe indicar que el laboratorio se completó exitosamente.
+Los cuatro archivos en `OK` y el acierto de la red por encima de 0.60.
 
 ---
 
-## Resumen de Entregables
+## Archivos que quedan
 
-| Artefacto | Ubicación | Descripción |
-|-----------|-----------|-------------|
-| Dataset crudo | `data/raw/banking_requests.csv` | 185+ solicitudes bancarias sintéticas |
-| Dataset procesado | `data/processed/banking_requests_processed.csv` | Textos tokenizados y normalizados |
-| Modelo Word2Vec | `embeddings/banking_w2v.model` | Embeddings 100D entrenados en corpus bancario |
-| Matriz embeddings | `embeddings/embedding_matrix.npy` | Matriz NumPy para capa Embedding de Keras |
-| Vocabulario | `embeddings/word_to_idx.json` | Mapeo palabra → índice |
-| Modelo siamés (mejor) | `models/siamese_best.keras` | Mejor checkpoint por val_accuracy |
-| Modelo siamés (final) | `models/siamese_final.keras` | Modelo al finalizar entrenamiento |
-| Historial | `models/training_history.csv` | Métricas por época |
-| Notebook completo | `notebooks/siamese_banking_duplicates.ipynb` | Todo el código del laboratorio |
-| Gráficos | `notebooks/*.png` | Visualizaciones de EDA y evaluación |
 
-## Criterios de Evaluación
+| Archivo                | Dónde                                        | Para qué                                        |
+| ---------------------- | -------------------------------------------- | ----------------------------------------------- |
+| Solicitudes originales | `data\raw\solicitudes.csv`                   | Los textos tal como se generaron                |
+| Solicitudes limpias    | `data\processed\solicitudes_limpias.csv`     | Texto ya normalizado                            |
+| Word2Vec               | `embeddings\word2vec.model`                  | Números de cada palabra de entrenamiento        |
+| Mejor modelo           | `models\mejor_modelo.keras`                  | La red con menor error de validación            |
+| Historial              | `models\historial.csv`                       | Error de cada vuelta                            |
+| Gráficos               | `notebooks\*.png`                            | Categorías y curvas de entrenamiento            |
+| Notebook               | `notebooks\siamese_banking_duplicates.ipynb` | Todo lo que ejecutaste, más las tres respuestas |
 
-| Criterio | Peso | Descripción |
-|----------|------|-------------|
-| Pipeline de preprocesamiento | 20% | Correcto y completo para español bancario |
-| Embeddings Word2Vec | 15% | Entrenamiento correcto y matriz compatible |
-| Generación de pares | 15% | Balance de clases y correctitud de etiquetas |
-| Arquitectura siamesa | 20% | Diseño correcto con LSTM compartido |
-| Entrenamiento con callbacks | 15% | Convergencia y prevención de sobreajuste |
-| Evaluación e interpretación | 15% | Métricas correctas y análisis contextual |
 
----
+## Cómo se evalúa
+
+
+| Qué se revisa        | Peso | Listo cuando                                                           |
+| -------------------- | ---- | ---------------------------------------------------------------------- |
+| Datos y limpieza     | 20%  | Hay solicitudes, grupos y texto limpio                                 |
+| Separación de grupos | 20%  | Entrenamiento, validación y prueba no comparten grupos                 |
+| Entrenamiento        | 25%  | Corriste el entrenamiento y leíste la gráfica de las dos líneas        |
+| Prueba               | 20%  | Reportaste acierto, precisión, cobertura y la comparación por palabras |
+| Decisión de negocio  | 15%  | Respondiste el umbral y el caso de la palabra desconocida              |
+
+
+## Si algo falla
+
+
+| Qué ves                                      | Qué hacer                                                                         |
+| -------------------------------------------- | --------------------------------------------------------------------------------- |
+| El kernel no es **Python (nlp_banking_lab)** | No sigas. Avisa al facilitador                                                    |
+| `NameError`                                  | Esa celda usa un resultado anterior. Ejecuta desde la celda de arranque, en orden |
+| Falla la descarga de palabras vacías         | Revisa el internet de la máquina o pide al facilitador la carpeta `nltk_data`     |
+| Una celda de gráficos no dibuja              | Vuelve a ejecutarla. El archivo `.png` igual se guarda en `notebooks`             |
+
+
