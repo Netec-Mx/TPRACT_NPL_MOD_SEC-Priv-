@@ -21,7 +21,7 @@ Una pareja es duplicada cuando las dos frases salen del mismo grupo: la misma so
 
 ## Prerrequisitos
 
-Esto ya lo dejó listo el facilitador. Los pasos de preparación están en [Prerequisitos.md](Prerequisitos.md). Si falta alguno, avísale. No lo instales durante el taller.
+Esto ya lo dejó listo el facilitador. Los pasos de preparación están en [Prerrequisitos.md](Prerrequisitos.md). Si falta alguno, avísale. No lo instales durante el taller.
 
 
 | Requisito               | Qué debes encontrar                                                                                                                                            |
